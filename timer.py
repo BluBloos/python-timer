@@ -49,7 +49,7 @@ class TimerApp(rumps.App):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Start a timer")
-    parser.add_argument("duration", type=str, help="duration of the timer in the format '10h 30m' or '30m'")
+    parser.add_argument("duration", type=str, help="duration of the timer in the format '10h 30m 3s', for example")
     args = parser.parse_args()
 
     timer_duration = 0
