@@ -3,6 +3,11 @@ import time
 import argparse
 from subprocess import Popen
 
+def formatTimeLeft(remaining):
+    hours, remainder = divmod(remaining, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(hours)}h {int(minutes)}m {int(seconds)}s remaining"
+
 class TimerApp(rumps.App):
     def __init__(self):
         super().__init__("Timer")
@@ -24,7 +29,7 @@ class TimerApp(rumps.App):
             rumps.notification("python-timer", "Time's up!", "Enjoy your break!")            
             p = Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
         else:
-            self.title = f"{timer_duration - current_time} seconds remaining"
+            self.title = formatTimeLeft(timer_duration - current_time)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Start a timer")
@@ -42,5 +47,5 @@ if __name__ == "__main__":
             timer_duration += int(part.strip("s"))
 
     app = TimerApp()
-    app.title = f"{timer_duration} seconds remaining"
+    app.title = formatTimeLeft(timer_duration)
     app.run()
