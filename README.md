@@ -1,5 +1,5 @@
 # python-timer
-One-hot timer invoked from Python for macOS
+One-hot timer invoked from cmdline for macOS
 
 ## Prerequisites
 
