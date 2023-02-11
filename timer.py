@@ -1,24 +1,3 @@
-'''
-import time
-import platform
-import subprocess
-#import winsound
-
-def ding():
-    #if platform.system() == "Windows":
-    #    winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
-    if platform.system() == "Darwin":
-        subprocess.call(["afplay", "/System/Library/Sounds/Glass.aiff"])
-
-def start_timer(seconds):
-    time.sleep(seconds)
-    ding()
-
-if __name__ == '__main__':
-    timer_duration = int(input("Enter the timer duration in seconds: "))
-    start_timer(timer_duration)
-'''
-
 import rumps
 import time
 import argparse
