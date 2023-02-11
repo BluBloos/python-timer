@@ -2,6 +2,13 @@ import rumps
 import time
 import argparse
 from subprocess import Popen
+import os
+
+def send_notification(title, subtitle, message):
+    t = '-title {!r}'.format(title)
+    s = '-subtitle {!r}'.format(subtitle)
+    m = '-message {!r}'.format(message)
+    os.system('terminal-notifier {}'.format(' '.join([m, t, s])))
 
 def formatTimeLeft(remaining):
     hours, remainder = divmod(remaining, 3600)
@@ -26,8 +33,11 @@ class TimerApp(rumps.App):
         if current_time >= timer_duration:
             self.timer.stop()
             self.title = "0 seconds remaining"
-            rumps.notification("python-timer", "Time's up!", "Enjoy your break!")            
-            p = Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
+            # TODO: can we make this a time-sensitive notification?
+            send_notification(title    = 'python-timer',
+                              subtitle = 'Timer complete.',
+                              message  = 'Enjoy your break!')
+            Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
         else:
             self.title = formatTimeLeft(timer_duration - current_time)
 
