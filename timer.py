@@ -16,8 +16,9 @@ def formatTimeLeft(remaining):
     return f"{int(hours)}h {int(minutes)}m {int(seconds)}s remaining"
 
 class TimerApp(rumps.App):
-    def __init__(self):
+    def __init__(self, description):
         super().__init__("Timer")
+        self.description = description  # Store the timer description
         self.timer = rumps.Timer(self.update_timer, 1)
         self.start_timer(None)
 
@@ -35,7 +36,7 @@ class TimerApp(rumps.App):
             self.title = "0 seconds remaining"
             # TODO: can we make this a time-sensitive notification?
             send_notification(title    = 'python-timer',
-                              subtitle = 'Timer complete.',
+                              subtitle = f'task "{self.description}" complete.',
                               message  = 'Enjoy your break!')
             Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
         else:
@@ -44,6 +45,7 @@ class TimerApp(rumps.App):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Start a timer")
     parser.add_argument("duration", type=str, help="duration of the timer in the format '10h 30m 3s', for example")
+    parser.add_argument("description", type=str, help="description of the timer")  # New argument for description
     args = parser.parse_args()
 
     timer_duration = 0
@@ -56,6 +58,6 @@ if __name__ == "__main__":
         elif "s" in part:
             timer_duration += int(part.strip("s"))
 
-    app = TimerApp()
+    app = TimerApp(args.description)  # Pass the description to the TimerApp
     app.title = formatTimeLeft(timer_duration)
     app.run()
