@@ -22,6 +22,7 @@ TOGGL_PROJECT_ID = None
 DEBUG = False
 
 chosen_workspace_id = 0
+mapping = None # shortname to project ID.
 
 def init_toggl_api_token():
 
@@ -50,6 +51,43 @@ def encode_auth():
     }
     return headers
 
+def get_projects(workspace_id):
+    headers = encode_auth()
+    response = requests.get(f"https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/projects", headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Return the JSON response
+        return response.json()
+    else:
+        # Handle errors (you can expand on this as needed)
+        return f"Error: {response.status_code}"
+
+# Function to read project mappings from the file
+def read_project_mappings(file_path):
+    mapping = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            toggl_name, short_name = line.strip().split(' = ')
+            mapping[toggl_name] = short_name
+    return mapping
+
+# Main function to create the shortname to project ID mapping
+def create_shortname_to_id_mapping(workspace_id , file_path):
+    toggl_projects = get_projects(workspace_id )
+    print(toggl_projects)
+    file_mappings = read_project_mappings(file_path)
+
+    shortname_to_id = {}
+    for project in toggl_projects:
+        toggl_name = project['name']
+        if toggl_name in file_mappings:
+            short_name = file_mappings[toggl_name]
+            shortname_to_id[short_name] = project['id']
+
+    return shortname_to_id
+
+
 def get_workspaces():
 
     headers = encode_auth()
@@ -60,8 +98,9 @@ def get_workspaces():
         print("Failed to fetch workspaces", response)
         return None
 
-def log_time_to_toggl(description, duration):
+def log_time_to_toggl(description, duration, project_shortname):
 
+    global mapping
     global start_time
 
     headers = encode_auth()
@@ -72,8 +111,12 @@ def log_time_to_toggl(description, duration):
         "tags": [],
         "start": time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(start_time)) + 'Z',
         "created_with": "python-timer",
-        "workspace_id": chosen_workspace_id
+        "workspace_id": chosen_workspace_id,
     }
+
+    if project_shortname != None and project_shortname in mapping:
+        data["project_id"] = mapping[project_shortname]
+
     if DEBUG:
         print(data)
         print(headers)
@@ -83,9 +126,11 @@ def log_time_to_toggl(description, duration):
     return response.ok
 
 class TimerApp(rumps.App):
-    def __init__(self, description):
+
+    def __init__(self, description, project_shortname):
         super().__init__("Timer")
         self.description = description  # Store the timer description
+        self.project_shortname = project_shortname
         self.timer = rumps.Timer(self.update_timer, 1)
         self.start_timer(None)
 
@@ -105,7 +150,7 @@ class TimerApp(rumps.App):
             send_notification(title    = 'python-timer',
                               subtitle = f'task "{self.description}" complete.',
                               message  = 'Enjoy your break!')
-            if log_time_to_toggl(self.description, timer_duration):
+            if log_time_to_toggl(self.description, timer_duration, self.project_shortname):
                 print("Time logged to Toggl Track successfully.")
             else:
                 print("Failed to log time to Toggl Track.")
@@ -127,9 +172,20 @@ if __name__ == "__main__":
         # Then, use log_time_to_toggl() function with the chosen_workspace_id
         print("chosen workspace ID=", chosen_workspace_id)
 
+    # init the project ID mapping.
+    try:
+        projects_file_path = os.path.join(os.path.expanduser('~'), 'toggl_track.projects.txt')
+        mapping = create_shortname_to_id_mapping(chosen_workspace_id,  projects_file_path )
+        print(mapping)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
     parser = argparse.ArgumentParser(description="Start a timer")
     parser.add_argument("duration", type=str, help="duration of the timer in the format '10h 30m 3s', for example")
     parser.add_argument("description", type=str, help="description of the timer")  # New argument for description
+    # Add an optional argument for project shortname with `-p`
+    parser.add_argument("-p", "--project", type=str, help="project shortname", default=None)
+
     args = parser.parse_args()
 
     timer_duration = 0
@@ -142,6 +198,6 @@ if __name__ == "__main__":
         elif "s" in part:
             timer_duration += int(part.strip("s"))
 
-    app = TimerApp(args.description)  # Pass the description to the TimerApp
+    app = TimerApp(args.description,  args.project )  # Pass the description to the TimerApp
     app.title = formatTimeLeft(timer_duration, app.description)
     app.run()
