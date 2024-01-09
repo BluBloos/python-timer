@@ -75,7 +75,6 @@ def read_project_mappings(file_path):
 # Main function to create the shortname to project ID mapping
 def create_shortname_to_id_mapping(workspace_id , file_path):
     toggl_projects = get_projects(workspace_id )
-    print(toggl_projects)
     file_mappings = read_project_mappings(file_path)
 
     shortname_to_id = {}
