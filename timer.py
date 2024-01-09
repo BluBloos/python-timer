@@ -12,10 +12,10 @@ def send_notification(title, subtitle, message):
     m = '-message {!r}'.format(message)
     os.system('terminal-notifier {}'.format(' '.join([m, t, s])))
 
-def formatTimeLeft(remaining):
+def formatTimeLeft(remaining, desc):
     hours, remainder = divmod(remaining, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return f"{int(hours)}h {int(minutes)}m {int(seconds)}s remaining"
+    return f"{desc} - {int(hours)}h {int(minutes)}m {int(seconds)}s remaining"
 
 TOGGL_API_TOKEN = "token"
 TOGGL_PROJECT_ID = None
@@ -111,7 +111,7 @@ class TimerApp(rumps.App):
                 print("Failed to log time to Toggl Track.")
             Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
         else:
-            self.title = formatTimeLeft(timer_duration - current_time)
+            self.title = formatTimeLeft(timer_duration - current_time, self.description)
 
 if __name__ == "__main__":
 
@@ -143,5 +143,5 @@ if __name__ == "__main__":
             timer_duration += int(part.strip("s"))
 
     app = TimerApp(args.description)  # Pass the description to the TimerApp
-    app.title = formatTimeLeft(timer_duration)
+    app.title = formatTimeLeft(timer_duration, app.description)
     app.run()
