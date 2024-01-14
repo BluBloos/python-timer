@@ -128,10 +128,19 @@ class TimerApp(rumps.App):
 
     def __init__(self, description, project_shortname):
         super().__init__("Timer")
+        
+        # Add menu items for Finish Early and Pause
+        self.menu.add(rumps.MenuItem("Finish Early", callback=self.finish_early))
+        #self.menu.add(rumps.MenuItem("Pause", callback=self.toggle_pause))
+        
         self.description = description  # Store the timer description
         self.project_shortname = project_shortname
         self.timer = rumps.Timer(self.update_timer, 1)
         self.start_timer(None)
+
+    def finish_early(self, _):
+        actual_duration = int(time.time() - start_time)
+        self.complete_timer(actual_duration)
 
     @rumps.clicked("Start Timer")
     def start_timer(self, _):
@@ -139,21 +148,24 @@ class TimerApp(rumps.App):
         start_time = time.time()
         self.timer.start()
 
+    def complete_timer(self, duration):
+        self.timer.stop()
+        self.title = "0 seconds remaining"
+        # TODO: can we make this a time-sensitive notification?
+        send_notification(title    = 'python-timer',
+                            subtitle = f'task "{self.description}" complete.',
+                            message  = 'Enjoy your break!')
+        if log_time_to_toggl(self.description, duration, self.project_shortname):
+            print("Time logged to Toggl Track successfully.")
+        else:
+            print("Failed to log time to Toggl Track.")
+        Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])  
+
     def update_timer(self, _):
         global start_time, timer_duration
         current_time = int(time.time() - start_time)
         if current_time >= timer_duration:
-            self.timer.stop()
-            self.title = "0 seconds remaining"
-            # TODO: can we make this a time-sensitive notification?
-            send_notification(title    = 'python-timer',
-                              subtitle = f'task "{self.description}" complete.',
-                              message  = 'Enjoy your break!')
-            if log_time_to_toggl(self.description, timer_duration, self.project_shortname):
-                print("Time logged to Toggl Track successfully.")
-            else:
-                print("Failed to log time to Toggl Track.")
-            Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])            
+            self.complete_timer(timer_duration)          
         else:
             self.title = formatTimeLeft(timer_duration - current_time, self.description)
 
