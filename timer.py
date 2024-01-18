@@ -161,6 +161,8 @@ class TimerApp(rumps.App):
             print("Failed to log time to Toggl Track.")
         Popen(["afplay", "/System/Library/Sounds/Hero.aiff"])  
 
+        rumps.quit_application()
+
     def update_timer(self, _):
         global start_time, timer_duration
         current_time = int(time.time() - start_time)
